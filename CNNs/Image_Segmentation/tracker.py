@@ -15,6 +15,12 @@ class Tracker(object):
         if video_file == "":
             video_file = 0
         self.cap = cv2.VideoCapture(video_file)
+        self.rec = rec
+        self.out = None
+        if self.rec != "":
+            # Define the codec and create VideoWriter object
+            fourcc = cv2.VideoWriter_fourcc(*'XVID')
+            self.out = cv2.VideoWriter(rec , fourcc, 10.0, (self.input_shape[1], self.input_shape[0]))
         self.threshold = threshold
         
     def loop(self):
@@ -30,17 +36,21 @@ class Tracker(object):
                 img[msk>=self.threshold] = colors[j]
             # Display the resulting frame
             cv2.imshow('frame',img)
+            if self.rec != "":
+                self.out.write(img)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
         
     def stop(self):
         self.cap.release()
+        if self.out:
+            self.out.release()
         cv2.destroyAllWindows()
 
 @click.command()
 @click.argument("model", default="model.h5")
 @click.option("-v", "video_file", default="", help="video file to track")
-@click.option("-r", "rec", is_flag=True, help="record video to file")
+@click.option("-r", "rec", default="", help="record video to file")
 @click.option("-t", "threshold", default=1.0, help="detection threshold")
 def main(model, threshold, rec, video_file):
     tracker = Tracker(model, threshold, rec, video_file)
