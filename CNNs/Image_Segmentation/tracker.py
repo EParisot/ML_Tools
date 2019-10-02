@@ -1,9 +1,17 @@
 import numpy as np
 import cv2
 import click
+import keras.backend as K
 from keras.models import load_model
 from deepctr.layers import custom_objects
-from const import colors, dice_coef
+from const import colors
+
+# metrics
+def dice_coef(y_true, y_pred, smooth=1):
+    y_true_f = K.flatten(y_true)
+    y_pred_f = K.flatten(y_pred)
+    intersection = K.sum(y_true_f * y_pred_f)
+    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
 
 class Tracker(object):
     

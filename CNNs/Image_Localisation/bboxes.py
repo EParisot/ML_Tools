@@ -3,6 +3,7 @@ import cv2
 import os
 import json
 import ctypes
+from const import colors
 
 class Bbox(object):
 
@@ -12,16 +13,6 @@ class Bbox(object):
         self.pt2 = None
         self.drag = False
         self.class_label = 0
-        self.colors = [(0, 0, 255),
-                       (255, 0, 0),
-                       (0, 255, 0),
-                       (255, 255, 0),
-                       (0, 102, 0),
-                       (255, 0, 255),
-                       (0, 255, 255),
-                       (255, 102, 255),
-                       (102, 51, 0),
-                       (255, 153, 51)]
         self.images_path = images_path
         self.images = os.listdir(self.images_path)
         self.labels_file = labels_file
@@ -59,7 +50,7 @@ class Bbox(object):
 
     def mouse_drawing(self, event, x, y, flags, param):
         tmp_img = param[0].copy()
-        color = self.colors[self.class_label]
+        color = colors[self.class_label]
         if self.drag == False and event == cv2.EVENT_LBUTTONDOWN:
             self.drag = True
             self.pt1 = (x, y)
@@ -81,7 +72,7 @@ class Bbox(object):
                 img = cv2.imread(os.path.join(self.images_path, self.images[i]))
                 if self.images[i] in self.labels:
                     for class_label in self.labels[self.images[i]]:
-                        color = self.colors[int(class_label)]
+                        color = colors[int(class_label)]
                         for rect in self.labels[self.images[i]][class_label]:
                             self.pt1 = (int(rect[0][0] * img.shape[1]), int(rect[0][1] * img.shape[0]))
                             self.pt2 = (int(rect[1][0] * img.shape[1]), int(rect[1][1] * img.shape[0]))
