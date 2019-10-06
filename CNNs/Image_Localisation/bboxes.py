@@ -30,14 +30,19 @@ class Bbox(object):
         self.pt1[1] = round(self.pt1[1] / img.shape[0], 2)
         self.pt2[0] = round(self.pt2[0] / img.shape[1], 2)
         self.pt2[1] = round(self.pt2[1] / img.shape[0], 2)
+        # transform [pt1, pt2] to [x, y, w, h]
+        w = abs(self.pt2[0] - self.pt1[0])
+        h = abs(self.pt2[1] - self.pt1[1])
+        x = self.pt1[0] + w / 2
+        y = self.pt1[1] + h / 2
         if img_name in self.labels:
             if str(self.class_label) in self.labels[img_name]:
-                self.labels[img_name][str(self.class_label)].append([self.pt1, self.pt2])
+                self.labels[img_name][str(self.class_label)].append([x, y, w, h])
             else:
-                self.labels[img_name][str(self.class_label)] = [[self.pt1, self.pt2]]
+                self.labels[img_name][str(self.class_label)] = [[x, y, w, h]]
         else:
             self.labels[img_name] = {}
-            self.labels[img_name][str(self.class_label)] = [[self.pt1, self.pt2]]
+            self.labels[img_name][str(self.class_label)] = [[x, y, w, h]]
 
     def clean_label(self, img_name):
         if img_name in self.labels and str(self.class_label) in self.labels[img_name]:
@@ -74,8 +79,8 @@ class Bbox(object):
                     for class_label in self.labels[self.images[i]]:
                         color = colors[int(class_label)]
                         for rect in self.labels[self.images[i]][class_label]:
-                            self.pt1 = (int(rect[0][0] * img.shape[1]), int(rect[0][1] * img.shape[0]))
-                            self.pt2 = (int(rect[1][0] * img.shape[1]), int(rect[1][1] * img.shape[0]))
+                            self.pt1 = (int((rect[0] - (rect[2] / 2)) * img.shape[1]), int((rect[1] - (rect[3] / 2)) * img.shape[0]))
+                            self.pt2 = (int((rect[0] + (rect[2] / 2)) * img.shape[1]), int((rect[1] + (rect[3] / 2)) * img.shape[0]))
                             cv2.rectangle(img, self.pt1, self.pt2, color)
                 cv2.imshow('Frame', img)
                 cv2.setMouseCallback("Frame", self.mouse_drawing, param=[img, self.images[i]])

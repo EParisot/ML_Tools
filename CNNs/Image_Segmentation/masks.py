@@ -55,7 +55,7 @@ class Mask(object):
         elif self.drag == True and event == cv2.EVENT_LBUTTONUP:
             self.drag = False
             cv2.line(param[0], self.pts[-1], self.pts[0], color)
-            self.append_label(param[1], [(round(pt[0] / tmp_img.shape[1], 2), round(pt[1] / tmp_img.shape[0], 2)) for pt in self.pts])
+            self.append_label(param[1], [(pt[0] / tmp_img.shape[1], pt[1] / tmp_img.shape[0]) for pt in self.pts])
             self.pts = []
         cv2.imshow('Frame',tmp_img)
 

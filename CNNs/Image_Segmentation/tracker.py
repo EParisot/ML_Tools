@@ -37,7 +37,7 @@ class Tracker(object):
             ret, frame = self.cap.read()
             img = cv2.resize(frame,(self.input_shape[1], self.input_shape[0]))
             # Operations on the frame
-            img = np.array(img)
+            img = np.array(img) / 255.0
             pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
             for j in range(self.class_nb):
                 msk = pred[0,:,:,j]

@@ -4,6 +4,9 @@
 *.mp4
 *.avi
 
+*.json
+*.h5
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
