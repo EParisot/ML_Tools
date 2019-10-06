@@ -59,7 +59,7 @@ class Tracker(object):
 @click.argument("model", default="model.h5")
 @click.option("-v", "video_file", default="", help="video file to track")
 @click.option("-r", "rec", default="", help="record video to file")
-@click.option("-t", "threshold", default=0.9, help="detection threshold")
+@click.option("-t", "threshold", default=0.75, help="detection threshold")
 def main(model, threshold, rec, video_file):
     tracker = Tracker(model, threshold, rec, video_file)
     tracker.loop()
