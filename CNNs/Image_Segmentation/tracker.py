@@ -39,9 +39,10 @@ class Tracker(object):
             # Operations on the frame
             img = np.array(img) / 255.0
             pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
+            img = (img * 255).astype('uint8')
             for j in range(self.class_nb):
                 msk = pred[0,:,:,j]
-                img[msk>=self.threshold] = [c/255. for c in colors[j]]
+                img[msk>=self.threshold] = colors[j]
             # Display the resulting frame
             cv2.imshow('frame',img)
             if self.rec != "":
@@ -59,7 +60,7 @@ class Tracker(object):
 @click.argument("model", default="model.h5")
 @click.option("-v", "video_file", default="", help="video file to track")
 @click.option("-r", "rec", default="", help="record video to file")
-@click.option("-t", "threshold", default=0.75, help="detection threshold")
+@click.option("-t", "threshold", default=0.9, help="detection threshold")
 def main(model, threshold, rec, video_file):
     tracker = Tracker(model, threshold, rec, video_file)
     tracker.loop()
