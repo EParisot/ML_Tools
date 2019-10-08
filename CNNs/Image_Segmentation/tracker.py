@@ -35,18 +35,18 @@ class Tracker(object):
         while(True):
             # Capture frame-by-frame
             ret, frame = self.cap.read()
-            img = cv2.resize(frame,(self.input_shape[1], self.input_shape[0]))
-            # Operations on the frame
-            img = np.array(img) / 255.0
-            pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
-            img = (img * 255).astype('uint8')
-            for j in range(self.class_nb):
-                msk = pred[0,:,:,j]
-                img[msk>=self.threshold] = colors[j]
-            # Display the resulting frame
-            cv2.imshow('frame',img)
-            if self.rec != "":
-                self.out.write(img)
+            if ret:
+                img = cv2.resize(frame,(self.input_shape[1], self.input_shape[0]))
+                # Operations on the frame
+                img = np.array(img) / 255.0
+                pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
+                for j in range(self.class_nb):
+                    msk = pred[0,:,:,j]
+                    img[msk>=self.threshold] = colors[j]
+                # Display the resulting frame
+                cv2.imshow('frame',img)
+                if self.rec != "":
+                    self.out.write(img)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
         

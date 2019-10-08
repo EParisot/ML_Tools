@@ -14,7 +14,7 @@ class Mask(object):
         self.pts = []
         self.drag = False
         self.class_label = 0
-        self.images = os.listdir(images_path)
+        self.images = [f if f.endswith(".png") else 0 for f in os.listdir(self.images_path)]
         self.labels = {}
         cv2.namedWindow("Frame")
         if os.path.exists(self.labels_file):
@@ -133,7 +133,7 @@ class Mask(object):
 
 @click.command()
 @click.option('-i', 'images_path', default="data", help="path to find images")
-@click.option('-o', 'labels_file', default="masks.json", help="path to store labels")
+@click.option('-o', 'labels_file', default="data/masks.json", help="path to store labels")
 def main(images_path, labels_file):
     mask = Mask(images_path, labels_file)
     mask.loop()

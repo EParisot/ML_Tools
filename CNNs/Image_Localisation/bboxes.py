@@ -14,7 +14,7 @@ class Bbox(object):
         self.drag = False
         self.class_label = 0
         self.images_path = images_path
-        self.images = os.listdir(self.images_path)
+        self.images = [f if f.endswith(".png") else 0 for f in os.listdir(self.images_path)]
         self.labels_file = labels_file
         self.labels = {}
         if os.path.exists(self.labels_file):
@@ -61,6 +61,14 @@ class Bbox(object):
             self.pt1 = (x, y)
         elif self.drag == True and event == cv2.EVENT_LBUTTONUP:
             self.drag = False
+            if x > tmp_img.shape[1]:
+                x = tmp_img.shape[1]
+            elif x < 0:
+                x = 0
+            if y > tmp_img.shape[0]:
+                y = tmp_img.shape[0]
+            elif y < 0:
+                y = 0
             self.pt2 = (x, y)
             cv2.rectangle(param[0], self.pt1, self.pt2, color)
             self.append_label(tmp_img, param[1])
@@ -138,7 +146,7 @@ class Bbox(object):
 
 @click.command()
 @click.option('-i', 'images_path', default="data", help="path to find images")
-@click.option('-o', 'labels_file', default="bboxes.json", help="path to store labels")
+@click.option('-o', 'labels_file', default="data/bboxes.json", help="path to store labels")
 def main(images_path, labels_file):
     bbox = Bbox(images_path, labels_file)
     bbox.loop()

@@ -65,28 +65,28 @@ class Tracker(object):
         while(True):
             # Capture frame-by-frame
             ret, frame = self.cap.read()
-            img = cv2.resize(frame,(self.input_shape[1], self.input_shape[0]))
-            # Operations on the frame
-            img = np.array(img) / 255.0
-            pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
-            # draw results on image
-            img = (img * 255).astype('uint8')
-            for n, label in enumerate(pred[0]):
-                row = int((n / self.nb_boxes) / self.grid_h)
-                col = (n / self.nb_boxes) - (row * self.grid_w)
-                x = (label[self.class_nb + 0] * self.cell_w) + (col * self.cell_w)
-                y = (label[self.class_nb + 1] * self.cell_h) + (row * self.cell_h)
-                pt1 = (int(x - (label[self.class_nb + 2] * self.img_w / 2)), \
-                       int(y - (label[self.class_nb + 3] * self.img_h / 2)))
-                pt2 = (int(x + (label[self.class_nb + 2] * self.img_w / 2)), \
-                       int(y + (label[self.class_nb + 3] * self.img_h / 2)))
-                cls = np.argmax(label[:self.class_nb])
-                if cls:
-                    cv2.rectangle(img, pt1, pt2, colors[cls])
-            # Display the resulting frame
-            cv2.imshow('frame',img)
-            if self.rec != "":
-                self.out.write(img)
+            if ret:
+                img = cv2.resize(frame,(self.input_shape[1], self.input_shape[0]))
+                # Operations on the frame
+                img = np.array(img) / 255.0
+                pred = self.model.predict(img.reshape((1, self.input_shape[0], self.input_shape[1], self.input_shape[2])))
+                # draw results on image
+                for n, label in enumerate(pred[0]):
+                    row = int((n / self.nb_boxes) / self.grid_h)
+                    col = (n / self.nb_boxes) - (row * self.grid_w)
+                    x = (label[self.class_nb + 0] * self.cell_w) + (col * self.cell_w)
+                    y = (label[self.class_nb + 1] * self.cell_h) + (row * self.cell_h)
+                    pt1 = (int(x - (label[self.class_nb + 2] * self.img_w / 2)), \
+                           int(y - (label[self.class_nb + 3] * self.img_h / 2)))
+                    pt2 = (int(x + (label[self.class_nb + 2] * self.img_w / 2)), \
+                           int(y + (label[self.class_nb + 3] * self.img_h / 2)))
+                    cls = np.argmax(label[:self.class_nb])
+                    if cls:
+                        cv2.rectangle(img, pt1, pt2, colors[cls])
+                # Display the resulting frame
+                cv2.imshow('frame',img)
+                if self.rec != "":
+                    self.out.write(img)
             if cv2.waitKey(1) & 0xFF == 27:
                 break
         
