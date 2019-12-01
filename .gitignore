@@ -4,6 +4,9 @@
 *.mp4
 *.avi
 
+*.zip
+*.rar
+
 *.json
 *.h5
 
