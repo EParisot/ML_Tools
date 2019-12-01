@@ -3,7 +3,7 @@ import cv2
 import os
 import json
 import ctypes
-from const import colors
+from const import colors, img_size
 
 class Mask(object):
 
@@ -14,7 +14,7 @@ class Mask(object):
         self.pts = []
         self.drag = False
         self.class_label = 0
-        self.images = [f if f.endswith(".png") else 0 for f in os.listdir(self.images_path)]
+        self.images = [f if f.endswith(".png") or f.endswith(".jpg") else 0 for f in os.listdir(self.images_path)]
         self.labels = {}
         cv2.namedWindow("Frame")
         if os.path.exists(self.labels_file):
@@ -64,7 +64,9 @@ class Mask(object):
         while True:
             if i >= 0 and i < len(self.images) and self.images[i] != None:
                 # open image and draw ROI
+                print(self.images_path, self.images[i])
                 img = cv2.imread(os.path.join(self.images_path, self.images[i]))
+                img = cv2.resize(img, img_size)
                 if self.images[i] in self.labels:
                     for class_label in self.labels[self.images[i]]:
                         color = colors[int(class_label)]
