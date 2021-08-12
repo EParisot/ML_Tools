@@ -27,17 +27,17 @@ class Bbox(object):
         print("Draw ROI : Lclick to start rect and release to draw ROI\n[0-9] : select current class\nN : next \nP : previous \nD : delete \nA : absent\n", flush=True)
 
     def append_label(self, img, img_name):
-        self.pt1 = list(self.pt1)
-        self.pt2 = list(self.pt2)
-        self.pt1[0] = round(self.pt1[0] / img.shape[1], 2)
-        self.pt1[1] = round(self.pt1[1] / img.shape[0], 2)
-        self.pt2[0] = round(self.pt2[0] / img.shape[1], 2)
-        self.pt2[1] = round(self.pt2[1] / img.shape[0], 2)
+        pt1 = [min(self.pt1[0], self.pt2[0]), min(self.pt1[1], self.pt2[1])]
+        pt2 = [max(self.pt1[0], self.pt2[0]), max(self.pt1[1], self.pt2[1])]
+        pt1[0] = round(pt1[0] / img.shape[1], 2)
+        pt1[1] = round(pt1[1] / img.shape[0], 2)
+        pt2[0] = round(pt2[0] / img.shape[1], 2)
+        pt2[1] = round(pt2[1] / img.shape[0], 2)
         # transform [pt1, pt2] to [x, y, w, h]
-        w = abs(self.pt2[0] - self.pt1[0])
-        h = abs(self.pt2[1] - self.pt1[1])
-        x = self.pt1[0] + w / 2
-        y = self.pt1[1] + h / 2
+        w = abs(pt2[0] - pt1[0])
+        h = abs(pt2[1] - pt1[1])
+        x = pt1[0] + w / 2
+        y = pt1[1] + h / 2
         if img_name in self.labels:
             if str(self.class_label) in self.labels[img_name]:
                 self.labels[img_name][str(self.class_label)].append([x, y, w, h])
@@ -121,18 +121,18 @@ class Bbox(object):
                     self.class_label = 8
                 elif self.key == ord('ç') or self.key == ord('9'):
                     self.class_label = 9
-                elif self.key == ord('a') and i <= len(self.images) - 1:
-                    self.clean_label(self.images[i])
                 elif self.key == ord('n') and i < len(self.images) - 1:
                     i += 1
                 elif self.key == ord('p') and i > 0:
                     i -= 1
+                elif self.key == ord('c') and i <= len(self.images) - 1:
+                    self.clean_label(self.images[i])
                 elif self.key == ord('d'):
                     # Remove file
                     if ctypes.windll.user32.MessageBoxW(0, "This will remove file !", "Warning", 1) == 1:
                         os.remove(self.images[i])
                         self.images[i] = None
-                        self.remove_label(img_name)
+                        self.remove_label(self.images[i])
                         i += 1
             elif i >= 0 and i < len(self.images) and self.images[i] == None:
                 if self.key == ord('p'):
@@ -150,7 +150,7 @@ class Bbox(object):
 
 @click.command()
 @click.option('-i', 'images_path', default="data", help="path to find images")
-@click.option('-o', 'labels_file', default="data/bboxes.json", help="path to store labels")
+@click.option('-o', 'labels_file', default="bboxes.json", help="path to store labels")
 def main(images_path, labels_file):
     bbox = Bbox(images_path, labels_file)
     bbox.loop()

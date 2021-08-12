@@ -1,16 +1,14 @@
 import numpy as np
 import cv2
 import click
-import tensorflow.keras.backend as K
+import tensorflow as tf
 from tensorflow.keras.models import load_model
-import tensorflow_addons as tfa
 from deepctr.layers import custom_objects
+from tensorflow.python.framework.c_api_util import tf_buffer
 from const import colors
 
 for i, c in enumerate(colors):
     colors[i] = list(reversed(c))
-
-f_loss = tfa.losses.SigmoidFocalCrossEntropy()
 
 class Tracker(object):
     
@@ -37,13 +35,14 @@ class Tracker(object):
         self.cell_h = self.img_h / self.grid_h
 
     
+    
     def custom_loss(self, y_true, y_pred):
 
-        y_true_class = K.reshape(y_true[...,:self.class_nb], (-1, self.grid_w * self.grid_h, self.nb_boxes, self.class_nb))
-        y_pred_class = K.reshape(y_pred[...,::self.class_nb], (-1, self.grid_w * self.grid_h, self.nb_boxes, self.class_nb))
+        y_true_class = y_true[...,:self.class_nb]
+        y_pred_class = y_pred[...,:self.class_nb]
 
-        pred_boxes = K.reshape(y_pred[...,:self.class_nb:], (-1, self.grid_w * self.grid_h, self.nb_boxes, 5))
-        true_boxes = K.reshape(y_true[...,:self.class_nb:], (-1, self.grid_w * self.grid_h, self.nb_boxes, 5))
+        pred_boxes = tf.reshape(y_pred[...,self.class_nb:], (-1, self.grid_w * self.grid_h, self.nb_boxes, 5))
+        true_boxes = tf.reshape(y_true[...,self.class_nb:], (-1, self.grid_w * self.grid_h, self.nb_boxes, 5))
         
         y_pred_xy   = pred_boxes[...,0:2]
         y_pred_wh   = pred_boxes[...,2:4]
@@ -53,24 +52,27 @@ class Tracker(object):
         y_true_wh   = true_boxes[...,2:4]
         y_true_conf = true_boxes[...,4]
 
-        clss_loss  = K.sum(f_loss(y_true_class, y_pred_class), axis=-1)
-        xy_loss    = K.sum(K.sum(K.square(y_true_xy - y_pred_xy),axis=-1)*y_true_conf, axis=-1)
-        wh_loss    = K.sum(K.sum(K.square(K.sqrt(y_true_wh) - K.sqrt(y_pred_wh)), axis=-1)*y_true_conf, axis=-1)
-
+        clss_loss  = tf.math.reduce_sum(tf.math.square(y_true_class - y_pred_class)) #* y_true_conf
+        xy_loss    = tf.math.reduce_sum(tf.math.square(y_true_xy - y_pred_xy)) * y_true_conf
+        # sqrt on wh to penalize bigger boxes
+        wh_loss    = tf.math.reduce_sum(tf.math.square(tf.math.sqrt(y_true_wh) - tf.math.sqrt(y_pred_wh))) * y_true_conf
+        #wh_loss    = tf.math.reduce_sum(tf.math.square(y_true_wh - y_pred_wh)) * y_true_conf
         # when we add the confidence the box prediction lower in quality but we gain the estimation of the quality of the box
         # however the training is a bit unstable
 
         # minimum distance between boxes distance between the two center
-        intersect_wh = K.maximum(K.zeros_like(y_pred_wh), (y_pred_wh + y_true_wh)/2 - K.abs(y_pred_xy - y_true_xy) )
+        intersect_wh = tf.maximum(tf_buffer.zeros_like(y_pred_wh), (y_pred_wh + y_true_wh)/2 - tf.abs(y_pred_xy - y_true_xy) )
         intersect_area = intersect_wh[...,0] * intersect_wh[...,1]
-        true_area = y_true_wh[...,0] * y_true_wh[...,1]
-        pred_area = y_pred_wh[...,0] * y_pred_wh[...,1]
+        
+        true_area  = y_true_wh[...,0] * y_true_wh[...,1]
+        pred_area  = y_pred_wh[...,0] * y_pred_wh[...,1]
         union_area = pred_area + true_area - intersect_area
+        
         iou = intersect_area / union_area
 
-        conf_loss = K.sum(K.square(y_true_conf*iou - y_pred_conf)*y_true_conf, axis=-1)
-
-        return clss_loss + xy_loss + wh_loss + conf_loss
+        conf_loss = tf.math.square(y_true_conf * iou - y_pred_conf) * y_true_conf
+        l_coords = 3
+        return clss_loss + l_coords * xy_loss + l_coords * wh_loss + conf_loss
 
     def loop(self):
         while(True):
@@ -87,14 +89,14 @@ class Tracker(object):
                         row = int(n / self.grid_h)
                         col = n - (row * self.grid_w)
                         label = rects[r]
-                        x = (label[self.class_nb + 0] * self.cell_w) + (col * self.cell_w)
-                        y = (label[self.class_nb + 1] * self.cell_h) + (row * self.cell_h)
-                        pt1 = (int(x - (label[self.class_nb + 2] * self.img_w / 2)), \
-                            int(y - (label[self.class_nb + 3] * self.img_h / 2)))
-                        pt2 = (int(x + (label[self.class_nb + 2] * self.img_w / 2)), \
-                            int(y + (label[self.class_nb + 3] * self.img_h / 2)))
                         cls = np.argmax(label[:self.class_nb])
                         if cls:
+                            x = (label[self.class_nb + 0] * self.cell_w) + (col * self.cell_w)
+                            y = (label[self.class_nb + 1] * self.cell_h) + (row * self.cell_h)
+                            w = label[self.class_nb + 2] * self.img_w
+                            h = label[self.class_nb + 3] * self.img_h
+                            pt1 = (int(x - (w / 2)), int(y - (h / 2)))
+                            pt2 = (int(x + (w / 2)), int(y + (h / 2)))
                             cv2.rectangle(img, pt1, pt2, colors[cls])
                 # Display the resulting frame
                 cv2.imshow('frame',img)
